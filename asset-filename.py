@@ -104,7 +104,7 @@ def get_generation(token, username, password, tenant, prefix, url):
     if request.status_code == 401:
         global accessToken
         accessToken = new_token(username, password, tenant, prefix)
-        return get_contentobject(accessToken, username, password, tenant, prefix, url)
+        return get_generation(accessToken, username, password, tenant, prefix, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         generation_response = ElementTree.fromstring(xml_response)
@@ -125,7 +125,7 @@ def get_generations(token, username, password, tenant, prefix, url):
     if request.status_code == 401:
         global accessToken
         accessToken = new_token(username, password, tenant, prefix)
-        return get_contentobject(accessToken, username, password, tenant, prefix, url)
+        return get_generations(accessToken, username, password, tenant, prefix, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         generations_response = ElementTree.fromstring(xml_response)
