@@ -13,8 +13,29 @@ def main():
     user_name = config['Section']['user.username']
     user_password = config['Section']['user.password']
     user_tenant = config['Section']['user.tenant']
-
     parent = config['Section']['parent.folder']
+
+    if not user_domain:
+        print("Please enter the Preservica domain in the properties file")
+        print("e.g. \"us\", \"eu\", \"ca\", \"au\" ")
+        raise SystemExit
+
+    if not user_name:
+        print("Please enter the Preservica user name in the properties file")
+        print("e.g. email address")
+        raise SystemExit
+
+    if not user_password:
+        print("Please enter the Preservica password in the properties file")
+        raise SystemExit
+
+    if not user_tenant:
+        print("Please enter the Preservica tenant name in the properties file")
+        raise SystemExit
+
+    if not parent:
+        print("Please enter the reference id for the parent folder of the assets")
+        raise SystemExit
 
     global accessToken
     accessToken = new_token(username=user_name, password=user_password, tenant=user_tenant, prefix=user_domain)
