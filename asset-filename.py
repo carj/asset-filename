@@ -7,7 +7,7 @@ accessToken = ""
 
 def main():
     config = configparser.ConfigParser()
-    config.read('folder.properties')
+    config.read('api.properties')
 
     server_name = config['Section']['server.name']
     user_name = config['Section']['user.username']
