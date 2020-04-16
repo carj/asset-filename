@@ -10,7 +10,7 @@ The script uses the Preservica v6 Entity API and its controlled from a propertie
 ```
 [Section]
 parent.folder=
-user.domain=
+server.name=
 user.username=
 user.password=
 user.tenant=
@@ -22,9 +22,9 @@ parent.folder=cff121a7-f76a-4e21-93fb-2a8f9f95761c
 ```
 
 
-The Preservica server domain prefix (e.g. eu/us/au/ca)
+The Preservica server name
 ```
-user.domain=eu
+user.domain=eu.preservica.com
 ```
 
 The Preservica tenant your user account belongs to

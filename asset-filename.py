@@ -9,15 +9,14 @@ def main():
     config = configparser.ConfigParser()
     config.read('folder.properties')
 
-    user_domain = config['Section']['user.domain']
+    server_name = config['Section']['server.name']
     user_name = config['Section']['user.username']
     user_password = config['Section']['user.password']
     user_tenant = config['Section']['user.tenant']
     parent = config['Section']['parent.folder']
 
-    if not user_domain:
-        print("Please enter the Preservica domain in the properties file")
-        print("e.g. \"us\", \"eu\", \"ca\", \"au\" ")
+    if not server_name:
+        print("Please enter the Preservica server name in the properties file")
         raise SystemExit
 
     if not user_name:
@@ -38,18 +37,18 @@ def main():
         raise SystemExit
 
     global accessToken
-    accessToken = new_token(username=user_name, password=user_password, tenant=user_tenant, prefix=user_domain)
+    accessToken = new_token(username=user_name, password=user_password, tenant=user_tenant, server=server_name)
 
     title = get_folder_name(token=accessToken, username=user_name, password=user_password, tenant=user_tenant,
-                            prefix=user_domain, folder_ref=parent)
+                            server=server_name, folder_ref=parent)
 
     find_folders(parent=parent, token=accessToken, username=user_name, password=user_password,
-                 tenant=user_tenant, prefix=user_domain, title=title)
+                 tenant=user_tenant, server=server_name, title=title)
 
 
-def new_token(username, password, tenant, prefix):
+def new_token(username, password, tenant, server):
     resp = requests.post(
-        f'https://{prefix}.preservica.com/api/accesstoken/login?username={username}&password={password}&tenant={tenant}')
+        f'https://{server}/api/accesstoken/login?username={username}&password={password}&tenant={tenant}')
     if resp.status_code == 200:
         return resp.json()['token']
     else:
@@ -58,15 +57,15 @@ def new_token(username, password, tenant, prefix):
         raise SystemExit
 
 
-def get_folder_children(token, username, password, tenant, prefix, folder_ref):
+def get_folder_children(token, username, password, tenant, server, folder_ref):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
     so_request = requests.get(
-        f'https://{prefix}.preservica.com/api/entity/structural-objects/{folder_ref}/children?start=0&max=100',
+        f'https://{server}/api/entity/structural-objects/{folder_ref}/children?start=0&max=100',
         headers=headers)
     if so_request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_folder_children(accessToken, username, password, tenant, prefix, folder_ref)
+        accessToken = new_token(username, password, tenant, server)
+        return get_folder_children(accessToken, username, password, tenant, server, folder_ref)
     elif so_request.status_code == 200:
         xml_response = str(so_request.content.decode('UTF-8'))
         entity_response = ElementTree.fromstring(xml_response)
@@ -79,14 +78,14 @@ def get_folder_children(token, username, password, tenant, prefix, folder_ref):
         raise SystemExit
 
 
-def get_folder_name(token, username, password, tenant, prefix, folder_ref):
+def get_folder_name(token, username, password, tenant, server, folder_ref):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
-    so_request = requests.get(f'https://{prefix}.preservica.com/api/entity/structural-objects/{folder_ref}',
+    so_request = requests.get(f'https://{server}/api/entity/structural-objects/{folder_ref}',
                               headers=headers)
     if so_request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_folder_name(accessToken, username, password, tenant, prefix, folder_ref)
+        accessToken = new_token(username, password, tenant, server)
+        return get_folder_name(accessToken, username, password, tenant, server, folder_ref)
     elif so_request.status_code == 200:
         xml_response = str(so_request.content.decode('UTF-8'))
         entity_response = ElementTree.fromstring(xml_response)
@@ -98,19 +97,19 @@ def get_folder_name(token, username, password, tenant, prefix, folder_ref):
         raise SystemExit
 
 
-def get_representation(token, username, password, tenant, prefix, url):
+def get_representation(token, username, password, tenant, server, url):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
     request = requests.get(url, headers=headers)
     if request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_representation(accessToken, username, password, tenant, prefix, url)
+        accessToken = new_token(username, password, tenant, server)
+        return get_representation(accessToken, username, password, tenant, server, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         representation_response = ElementTree.fromstring(xml_response)
         contentobject = representation_response.find('.//{http://preservica.com/EntityAPI/v6.0}ContentObject')
         if contentobject.text:
-            return get_contentobject(token, username, password, tenant, prefix, contentobject.text)
+            return get_contentobject(token, username, password, tenant, server, contentobject.text)
         else:
             return None
     else:
@@ -119,13 +118,13 @@ def get_representation(token, username, password, tenant, prefix, url):
         raise SystemExit
 
 
-def get_generation(token, username, password, tenant, prefix, url):
+def get_generation(token, username, password, tenant, server, url):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
     request = requests.get(url, headers=headers)
     if request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_generation(accessToken, username, password, tenant, prefix, url)
+        accessToken = new_token(username, password, tenant, server)
+        return get_generation(accessToken, username, password, tenant, server, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         generation_response = ElementTree.fromstring(xml_response)
@@ -140,19 +139,19 @@ def get_generation(token, username, password, tenant, prefix, url):
         raise SystemExit
 
 
-def get_generations(token, username, password, tenant, prefix, url):
+def get_generations(token, username, password, tenant, server, url):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
     request = requests.get(url, headers=headers)
     if request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_generations(accessToken, username, password, tenant, prefix, url)
+        accessToken = new_token(username, password, tenant, server)
+        return get_generations(accessToken, username, password, tenant, server, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         generations_response = ElementTree.fromstring(xml_response)
         generation = generations_response.find('.//{http://preservica.com/EntityAPI/v6.0}Generation')
         if generation.text:
-            return get_generation(token, username, password, tenant, prefix, generation.text)
+            return get_generation(token, username, password, tenant, server, generation.text)
         else:
             return None
     else:
@@ -161,19 +160,19 @@ def get_generations(token, username, password, tenant, prefix, url):
         raise SystemExit
 
 
-def get_contentobject(token, username, password, tenant, prefix, url):
+def get_contentobject(token, username, password, tenant, server, url):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
     request = requests.get(url, headers=headers)
     if request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_contentobject(accessToken, username, password, tenant, prefix, url)
+        accessToken = new_token(username, password, tenant, server)
+        return get_contentobject(accessToken, username, password, tenant, server, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         entity_response = ElementTree.fromstring(xml_response)
         generations = entity_response.find('.//{http://preservica.com/EntityAPI/v6.0}Generations')
         if generations.text:
-            return get_generations(token, username, password, tenant, prefix, generations.text)
+            return get_generations(token, username, password, tenant, server, generations.text)
         else:
             return None
     else:
@@ -182,19 +181,19 @@ def get_contentobject(token, username, password, tenant, prefix, url):
         raise SystemExit
 
 
-def get_representations(token, username, password, tenant, prefix, url):
+def get_representations(token, username, password, tenant, server, url):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
     request = requests.get(url, headers=headers)
     if request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_representations(accessToken, username, password, tenant, prefix, url)
+        accessToken = new_token(username, password, tenant, server)
+        return get_representations(accessToken, username, password, tenant, server, url)
     elif request.status_code == 200:
         xml_response = str(request.content.decode('UTF-8'))
         representations_response = ElementTree.fromstring(xml_response)
         representation = representations_response.find('.//{http://preservica.com/EntityAPI/v6.0}Representation')
         if representation.text:
-            return get_representation(token, username, password, tenant, prefix, representation.text)
+            return get_representation(token, username, password, tenant, server, representation.text)
         else:
             return None
     else:
@@ -203,20 +202,20 @@ def get_representations(token, username, password, tenant, prefix, url):
         raise SystemExit
 
 
-def get_entity(token, username, password, tenant, prefix, ref):
+def get_entity(token, username, password, tenant, server, ref):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
-    so_request = requests.get(f'https://{prefix}.preservica.com/api/entity/information-objects/{ref}',
+    so_request = requests.get(f'https://{server}/api/entity/information-objects/{ref}',
                               headers=headers)
     if so_request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return get_entity(accessToken, username, password, tenant, prefix, ref)
+        accessToken = new_token(username, password, tenant, server)
+        return get_entity(accessToken, username, password, tenant, server, ref)
     elif so_request.status_code == 200:
         xml_response = str(so_request.content.decode('UTF-8'))
         io = ElementTree.fromstring(xml_response)
         representations = io.find('.//{http://preservica.com/EntityAPI/v6.0}Representations')
         if representations.text:
-            return get_representations(token, username, password, tenant, prefix, representations.text)
+            return get_representations(token, username, password, tenant, server, representations.text)
         else:
             return None
     else:
@@ -225,14 +224,14 @@ def get_entity(token, username, password, tenant, prefix, ref):
         raise SystemExit
 
 
-def update_asset_description(ref, token, username, password, tenant, prefix, title):
+def update_asset_description(ref, token, username, password, tenant, server, title):
     headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Preservica-Access-Token': token}
-    get_request = requests.get(f'https://{prefix}.preservica.com/api/entity/information-objects/{ref}',
+    get_request = requests.get(f'https://{server}/api/entity/information-objects/{ref}',
                                headers=headers)
     if get_request.status_code == 401:
         global accessToken
-        accessToken = new_token(username, password, tenant, prefix)
-        return update_asset_description(accessToken, username, password, tenant, prefix, ref)
+        accessToken = new_token(username, password, tenant, server)
+        return update_asset_description(accessToken, username, password, tenant, server, ref)
     elif get_request.status_code == 200:
         xml_response = str(get_request.content.decode('UTF-8'))
         asset = ElementTree.fromstring(xml_response)
@@ -253,7 +252,7 @@ def update_asset_description(ref, token, username, password, tenant, prefix, tit
         xml = ElementTree.tostring(io, 'utf-8').decode('utf-8')
         data = bytes(xml, 'utf-8')
         headers = {'Content-Type': 'application/xml', 'Preservica-Access-Token': token}
-        put = requests.put(f'https://{prefix}.preservica.com/api/entity/information-objects/{ref}',
+        put = requests.put(f'https://{server}/api/entity/information-objects/{ref}',
                            data=data, headers=headers)
         if put.status_code == 200:
             print("Asset Description Updated")
@@ -266,21 +265,21 @@ def update_asset_description(ref, token, username, password, tenant, prefix, tit
         raise SystemExit
 
 
-def find_folders(parent, token, username, password, tenant, prefix, title):
+def find_folders(parent, token, username, password, tenant, server, title):
     print(f'Finding entities inside folder: {title}')
     tupl = get_folder_children(token=token, username=username, password=password, tenant=tenant,
-                               prefix=prefix, folder_ref=parent)
+                               server=server, folder_ref=parent)
     max_results = tupl[0]
     children = tupl[1]
     for child in children:
         if child.attrib['type'] == 'SO':
-            find_folders(child.attrib['ref'], token, username, password, tenant, prefix, child.attrib["title"])
+            find_folders(child.attrib['ref'], token, username, password, tenant, server, child.attrib["title"])
         if child.attrib['type'] == 'IO':
-            filename = get_entity(token, username, password, tenant, prefix, child.attrib["ref"])
+            filename = get_entity(token, username, password, tenant, server, child.attrib["ref"])
             print(f'Found entity: "{child.attrib["title"]}" '
                   f'with ref: "{child.attrib["ref"]}" with filename: "{filename}"')
             if filename:
-                update_asset_description(child.attrib["ref"], token, username, password, tenant, prefix, filename)
+                update_asset_description(child.attrib["ref"], token, username, password, tenant, server, filename)
 
 
 main()
